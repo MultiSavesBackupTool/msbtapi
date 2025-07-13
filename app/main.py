@@ -12,14 +12,14 @@ async def startup():
 async def shutdown():
     await disconnect_from_db()
 
-@app.get("/api/blacklist")
+@app.get("blacklist")
 async def read_blacklist():
     return await get_blacklist()
 
-@app.get("/api/whitelist")
+@app.get("whitelist")
 async def read_whitelist():
     return await get_whitelist()
 
-@app.get("/api/gamesdetect")
+@app.get("gamesdetect")
 async def read_gamesdetect():
     return await fetch_discord_detectable()
