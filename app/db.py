@@ -47,3 +47,25 @@ async def get_blacklist():
 
 async def get_whitelist():
     return await execute_query("SELECT * FROM whitelist")
+
+async def apply_whitelist(entry: dict):
+    query = f"""
+        INSERT INTO whitelist (GameName, GameExe, GameExeAlt, SavePath, ModPath, AddPath, SpecialBackupMark)
+        VALUES (
+            '{entry.get("gameName")}',
+            '{entry.get("gameExe")}',
+            '{entry.get("gameExeAlt") or ""}',
+            '{entry.get("savePath")}',
+            '{entry.get("modPath") or ""}',
+            '{entry.get("addPath") or ""}',
+            {entry.get("specialBackupMark", 0)}
+        );
+    """
+    await execute_query(query)
+
+async def apply_blacklist(entry: dict):
+    query = f"""
+        INSERT INTO blacklist (GameName)
+        VALUES ('{entry.get("gameName")}')
+    """
+    await execute_query(query)
