@@ -1,5 +1,6 @@
 import aiomysql
 from aiomysql import OperationalError, ProgrammingError
+import config
 
 pool = None
 
@@ -7,11 +8,11 @@ async def connect_to_db():
     global pool
     try:
         pool = await aiomysql.create_pool(
-            user="",
-            password="",
-            host="",
-            port=,
-            db="",
+            user=config.db_user,
+            password=config.db_password,
+            host=config.db_host,
+            port=config.db_port,
+            db=config.db_name,
             minsize=1,
             maxsize=5,
             autocommit = True

@@ -1,11 +1,12 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 import secrets
+import config
 
 security = HTTPBasic()
 
-ADMIN_USERNAME = ""
-ADMIN_PASSWORD = ""
+ADMIN_USERNAME = config.api_user
+ADMIN_PASSWORD = config.api_pass
 
 class AdminUser:
     def __init__(self, username: str):
