@@ -50,11 +50,9 @@ async def get_whitelist():
 
 async def apply_whitelist(entry: dict):
     query = f"""
-        INSERT INTO whitelist (GameName, GameExe, GameExeAlt, SavePath, ModPath, AddPath, SpecialBackupMark)
+        INSERT INTO whitelist (GameName, SavePath, ModPath, AddPath, SpecialBackupMark)
         VALUES (
             '{entry.get("gameName")}',
-            '{entry.get("gameExe")}',
-            '{entry.get("gameExeAlt") or ""}',
             '{entry.get("savePath")}',
             '{entry.get("modPath") or ""}',
             '{entry.get("addPath") or ""}',

@@ -43,8 +43,6 @@ class RequestType(str, Enum):
 
 class WhitelistEntry(BaseModel):
     gameName: str
-    gameExe: str
-    gameExeAlt: Optional[str] = None
     savePath: str
     modPath: Optional[str] = None
     addPath: Optional[str] = None
