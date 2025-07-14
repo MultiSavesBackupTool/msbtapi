@@ -58,7 +58,6 @@ class ModerationRequest(BaseModel):
     data: dict
     approved: Optional[bool] = None
 
-# Временное in-memory хранилище заявок
 pending_requests: Dict[str, ModerationRequest] = {}
 
 @app.post("/whitelist")
