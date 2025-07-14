@@ -1,6 +1,6 @@
 import aiomysql
 from aiomysql import OperationalError, ProgrammingError
-import config
+from app import config
 
 pool = None
 
