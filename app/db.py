@@ -42,6 +42,22 @@ async def execute_query(query: str):
         print("SQL error:", e)
         return []
 
+async def execute_query_with_params(query: str, params: tuple):
+    global pool
+    try:
+        async with pool.acquire() as conn:
+            async with conn.cursor() as cur:
+                await cur.execute(query, params)
+                if query.strip().lower().startswith('select'):
+                    return await cur.fetchall()
+    except OperationalError:
+        print("Lost DB connection, trying to reconnect...")
+        await connect_to_db()
+        return await execute_query_with_params(query, params)
+    except ProgrammingError as e:
+        print("SQL error:", e)
+        return []
+
 async def get_blacklist():
     return await execute_query("SELECT * FROM blacklist")
 
@@ -49,21 +65,20 @@ async def get_whitelist():
     return await execute_query("SELECT * FROM whitelist")
 
 async def apply_whitelist(entry: dict):
-    query = f"""
+    query = """
         INSERT INTO whitelist (GameName, SavePath, ModPath, AddPath, SpecialBackupMark)
-        VALUES (
-            '{entry.get("gameName")}',
-            '{entry.get("savePath")}',
-            '{entry.get("modPath") or ""}',
-            '{entry.get("addPath") or ""}',
-            {entry.get("specialBackupMark", 0)}
-        );
+        VALUES (%s, %s, %s, %s, %s)
     """
-    await execute_query(query)
+    values = (
+        entry.get("gameName"),
+        entry.get("savePath"),
+        entry.get("modPath") or "",
+        entry.get("addPath") or "",
+        int(entry.get("specialBackupMark", 0))
+    )
+    await execute_query_with_params(query, values)
 
 async def apply_blacklist(entry: dict):
-    query = f"""
-        INSERT INTO blacklist (GameName)
-        VALUES ('{entry.get("gameName")}')
-    """
-    await execute_query(query)
+    query = "INSERT INTO blacklist (GameName) VALUES (%s)"
+    values = (entry.get("gameName"),)
+    await execute_query_with_params(query, values)
