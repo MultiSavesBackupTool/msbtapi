@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from app.db import connect_to_db, disconnect_from_db, get_blacklist, get_whitelist, apply_whitelist, apply_blacklist
 from app.discorddetect import fetch_discord_detectable
 from app.auth import get_current_user, AdminUser
+from app.telegram_bot import send_moderation_request, start_bot, stop_bot
 
 app = FastAPI()
 
@@ -16,10 +17,12 @@ app = FastAPI()
 @app.on_event("startup")
 async def startup():
     await connect_to_db()
+    await start_bot()
 
 @app.on_event("shutdown")
 async def shutdown():
     await disconnect_from_db()
+    await stop_bot()
 
 # =================== Public Routes ===================
 
@@ -69,6 +72,7 @@ async def submit_whitelist(entry: WhitelistEntry):
         data=entry.dict()
     )
     pending_requests[str(req.id)] = req
+    await send_moderation_request(str(req.id), req.type.value, req.data)
     return {"detail": "Submitted for moderation", "id": req.id}
 
 @app.post("/blacklist")
@@ -80,17 +84,17 @@ async def submit_blacklist(entry: BlacklistEntry):
         data=entry.dict()
     )
     pending_requests[str(req.id)] = req
+    await send_moderation_request(str(req.id), req.type.value, req.data)
     return {"detail": "Submitted for moderation", "id": req.id}
 
 @app.get("/pending")
 async def get_pending_requests(user: AdminUser = Depends(get_current_user)):
     return [r for r in pending_requests.values() if r.approved is None]
 
-@app.post("/moderate/{request_id}")
-async def moderate_request(request_id: UUID, approved: bool, user: AdminUser = Depends(get_current_user)):
+async def process_moderation_action(request_id: str, approved: bool) -> bool:
     request = pending_requests.get(str(request_id))
     if not request:
-        raise HTTPException(status_code=404, detail="Request not found")
+        return False
 
     request.approved = approved
 
@@ -99,5 +103,12 @@ async def moderate_request(request_id: UUID, approved: bool, user: AdminUser = D
             await apply_whitelist(request.data)
         elif request.type == RequestType.blacklist:
             await apply_blacklist(request.data)
+    return True
 
+@app.post("/moderate/{request_id}")
+async def moderate_request(request_id: UUID, approved: bool, user: AdminUser = Depends(get_current_user)):
+    success = await process_moderation_action(str(request_id), approved)
+    if not success:
+        raise HTTPException(status_code=404, detail="Request not found")
+    
     return {"detail": "Request processed", "approved": approved}
