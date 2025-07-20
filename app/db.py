@@ -7,6 +7,7 @@ pool = None
 async def connect_to_db():
     global pool
     try:
+        print(f"Attempting to connect to database at {config.db_host}:{config.db_port}")
         pool = await aiomysql.create_pool(
             user=config.db_user,
             password=config.db_password,
@@ -15,11 +16,13 @@ async def connect_to_db():
             db=config.db_name,
             minsize=1,
             maxsize=5,
-            autocommit = True
+            autocommit=True
         )
-        print("Connected to database")
+        print("Successfully connected to database")
     except Exception as e:
-        print("Database connection error:", e)
+        print(f"Database connection error: {e}")
+        print(f"Connection details: host={config.db_host}, port={config.db_port}, user={config.db_user}, db={config.db_name}")
+        pool = None
 
 async def disconnect_from_db():
     global pool
@@ -30,6 +33,13 @@ async def disconnect_from_db():
 
 async def execute_query(query: str):
     global pool
+    if pool is None:
+        print("Database pool not initialized, attempting to connect...")
+        await connect_to_db()
+        if pool is None:
+            print("Failed to establish database connection")
+            return []
+    
     try:
         async with pool.acquire() as conn:
             async with conn.cursor() as cur:
@@ -45,6 +55,13 @@ async def execute_query(query: str):
 
 async def execute_query_with_params(query: str, params: tuple):
     global pool
+    if pool is None:
+        print("Database pool not initialized, attempting to connect...")
+        await connect_to_db()
+        if pool is None:
+            print("Failed to establish database connection")
+            return []
+    
     try:
         async with pool.acquire() as conn:
             async with conn.cursor() as cur:
